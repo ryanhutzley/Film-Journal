@@ -1,3 +1,21 @@
-# Film Journal
+# RI Meeting Booker
 
-An app for viewing favorite movies and movies you'd like to see
+## A React-Node.js app
+
+<br>
+
+### A simple form to send a slack message, create Salesforce Opportunity, and generate GCal events when booking a meeting
+
+<br>
+
+Setup:
+
+`npm install`
+
+`npm start`
+
+`cd client`
+
+`npm install`
+
+`npm start`

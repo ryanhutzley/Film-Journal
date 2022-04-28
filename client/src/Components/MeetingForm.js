@@ -13,9 +13,9 @@ import {
 } from "@mui/material";
 import { LocalizationProvider } from "@mui/lab";
 import DateAdapter from "@mui/lab/AdapterLuxon";
+import { DateTime } from "luxon";
 import { DateTimePicker } from "@mui/lab";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { ReactComponent as Logo } from "./images/ri_logo.svg";
+import { ReactComponent as Logo } from "../images/ri_logo.svg";
 import ExtAttendee from "./ExtAttendee";
 import "./App.css";
 
@@ -50,35 +50,36 @@ const opptyOwners = [
 	"Dominic Glover",
 	"Ryan O'Rourke",
 	"Andrew Amato",
+	"Alie Fordyce",
 ];
 
-const THEME = createTheme({
-	typography: {
-		fontFamily: `"InputMono", "Helvetica", "Arial", sans-serif`,
-		fontSize: 14,
-		fontWeightLight: 300,
-		fontWeightRegular: 400,
-		fontWeightMedium: 500,
-	},
-});
+const today = DateTime.now();
 
-const dateTime = new Date();
-
-function App() {
+function MeetingForm({ setUnauthorized, unauthorized }) {
 	const [fields, setFields] = useState({
-		externalAttendees: [{ name: "", email: "", role: "", primaryContact: false }],
+		booker: "",
+		externalAttendees: [
+			{
+				name: "",
+				email: "",
+				role: "",
+				primaryContact: false,
+			},
+		],
 		internalAttendees: [allIntAttendees[0].name],
 		companyName: "",
 		dataType: "",
-		meetingDateTime: dateTime,
+		meetingDateTime: today,
 		oppOwner: "",
 		context: "You will be meeting with...",
 	});
-	const nameAndEmail = fields.externalAttendees.map((att) => `${att.name}, ${att.role}`);
+	const [errors, setErrors] = useState({});
+
+	const nameAndRole = fields.externalAttendees.map((att) => `${att.name}, ${att.role}`);
 
 	useEffect(() => {
 		formatAttendees(fields.externalAttendees, fields.companyName);
-	}, [fields.companyName, fields.externalAttendees.length, JSON.stringify(nameAndEmail)]);
+	}, [fields.companyName, fields.externalAttendees.length, JSON.stringify(nameAndRole)]);
 
 	function formatAttendees(attendees, company) {
 		let initialString = "You will be meeting with ";
@@ -111,10 +112,11 @@ function App() {
 	}
 
 	function handleTextFieldChange(e) {
-		const { id, value } = e.target;
+		const value = e.target.value;
+		const fieldName = e.target.id;
 		setFields({
 			...fields,
-			[id]: value,
+			[fieldName]: value,
 		});
 	}
 
@@ -127,16 +129,39 @@ function App() {
 
 	function handleCheckBoxChange(e) {
 		const { id, checked } = e.target;
-		setFields({
-			...fields,
-			[id]: checked,
-		});
+		const index = id;
+		const formValues = { ...fields };
+		const targetAttendee = formValues.externalAttendees[index];
+		targetAttendee.primaryContact = checked;
+		if (errors?.primaryContact) {
+			const errorsCopy = { ...errors };
+			delete errorsCopy.primaryContact;
+			setErrors(errorsCopy);
+		}
+		setFields(formValues);
 	}
 
 	function handleAdd() {
 		const values = { ...fields };
-		values.externalAttendees.push({ name: "", email: "", role: "", primaryContact: false });
+		values.externalAttendees.push({
+			name: "",
+			email: "",
+			role: "",
+			primaryContact: false,
+		});
 		setFields(values);
+	}
+
+	function handleDateTimeChange(date) {
+		if (errors?.meetingDateTime) {
+			const errorsCopy = { ...errors };
+			delete errorsCopy.meetingDateTime;
+			setErrors(errorsCopy);
+		}
+		setFields({
+			...fields,
+			meetingDateTime: date,
+		});
 	}
 
 	function handleRemove(i) {
@@ -147,22 +172,81 @@ function App() {
 
 	function handleSubmit(e) {
 		e.preventDefault();
-		console.log("submitted!");
-		// TODO: Set error states for email, 1 Primary Contact, and meetingDateTime = date
+		const formValues = { ...fields };
+		const attendees = fields.externalAttendees;
+		const errorObj = {};
+		let canSubmit = true;
+
+		const primaryContacts = attendees.filter((att) => att.primaryContact === true);
+
+		if (primaryContacts.length === 0 || primaryContacts.length !== 1) {
+			errorObj.primaryContact = true;
+			canSubmit = false;
+		}
+
+		if (formValues.meetingDateTime <= today) {
+			errorObj.meetingDateTime = true;
+			canSubmit = false;
+		}
+
+		canSubmit ? submit(fields) : setErrors(errorObj);
+	}
+
+	async function submit(formData) {
+		const res = await fetch("/user/book", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(formData),
+		});
+		const data = await res.json();
+		if (res.status === 401) {
+			setUnauthorized(!unauthorized);
+		}
+	}
+
+	async function logOut() {
+		const res = await fetch("/logout");
+		const data = await res.json();
+		if (res.ok) {
+			setUnauthorized(!unauthorized);
+			window.scrollTo(0, 0);
+		}
 	}
 
 	const isRemoveDisplayed = fields.externalAttendees.length >= 2 ? true : false;
 
-	console.log(fields);
-
 	return (
-		<ThemeProvider theme={THEME}>
+		<div className="form-page">
 			<div className="form-container">
 				<div className="title">
 					<Logo style={{ marginRight: "20px" }} />
-					<h2>ROBUST INTELLIGENCE Meeting Booker</h2>
+					<h2>RI Meeting Booker</h2>
 				</div>
 				<form onSubmit={handleSubmit}>
+					<FormControl>
+						<InputLabel size="small">Booker</InputLabel>
+						<Select
+							required
+							size="small"
+							id="booker"
+							value={fields.booker}
+							label="Booker"
+							onChange={(e) =>
+								setFields({
+									...fields,
+									booker: e.target.value,
+								})
+							}
+						>
+							{opptyOwners.map((owner, i) => (
+								<MenuItem value={owner} key={i}>
+									{owner}
+								</MenuItem>
+							))}
+						</Select>
+					</FormControl>
 					<FormLabel className="FormLabel">External Attendee</FormLabel>
 					{fields.externalAttendees.map((attendee, idx) => {
 						return (
@@ -172,6 +256,7 @@ function App() {
 								handleExtAttChange={handleExtAttChange}
 								handleCheckBoxChange={handleCheckBoxChange}
 								index={idx.toString()}
+								errors={errors}
 							/>
 						);
 					})}
@@ -263,13 +348,16 @@ function App() {
 								id="meetingDateTime"
 								label="Date and Time Picker"
 								value={fields.meetingDateTime}
-								onChange={(date) =>
-									setFields({
-										...fields,
-										meetingDateTime: date,
-									})
-								}
-								renderInput={(params) => <TextField {...params} />}
+								onChange={(date) => handleDateTimeChange(date)}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										error={errors?.meetingDateTime}
+										helperText={
+											errors?.meetingDateTime ? "Meeting date must be in the future" : null
+										}
+									/>
+								)}
 							/>
 						</LocalizationProvider>
 						<FormControl>
@@ -313,8 +401,11 @@ function App() {
 					</Button>
 				</form>
 			</div>
-		</ThemeProvider>
+			<Button variant="outlined" color="error" style={{ marginTop: "30px" }} onClick={logOut}>
+				Log Out
+			</Button>
+		</div>
 	);
 }
 
-export default App;
+export default MeetingForm;

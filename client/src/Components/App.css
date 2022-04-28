@@ -1,0 +1,60 @@
+.form-page {
+	margin: auto;
+	margin-top: 50px;
+	margin-bottom: 50px;
+	min-width: 300px;
+	max-width: 800px;
+	font-family: InputMono;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.form-container {
+	padding: 15px 15px 20px;
+	border: solid black 5px;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	display: flex;
+	flex-direction: column;
+}
+
+.title {
+	display: inline-flex;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+h2 {
+	margin: 0;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.section {
+	display: inline-flex;
+	gap: 10px;
+}
+
+.ext-attendee-btn {
+	flex-grow: 1;
+}
+
+.login-container {
+	margin: auto;
+	margin-top: 80px;
+	margin-bottom: 50px;
+	padding: 15px 15px 20px;
+	min-width: 300px;
+	max-width: 500px;
+	border: solid black 5px;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	font-family: InputMono;
+	display: flex;
+	flex-direction: column;
+}
